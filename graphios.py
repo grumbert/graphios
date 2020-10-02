@@ -1,4 +1,4 @@
-#!/usr/bin/python -tt
+#!/usr/bin/python3 -tt
 # vim: set ts=4 sw=4 tw=79 et :
 # Copyright (C) 2011  Shawn Sterling <shawn@systemtemplar.org>
 #
@@ -34,7 +34,7 @@
 # The latest version of this code will be found on my github page:
 # https://github.com/shawn-sterling
 
-from ConfigParser import SafeConfigParser
+from configparser import ConfigParser
 from optparse import OptionParser
 import copy
 import graphios_backends as backends
@@ -153,9 +153,9 @@ class GraphiosMetric(object):
         re.sub('"', "", self.VALUE)
         self.check_adjust_hostname()
         if (
-            self.TIMET is not '' and
-            self.PERFDATA is not '' and
-            self.HOSTNAME is not ''
+            self.TIMET != '' and
+            self.PERFDATA != '' and
+            self.HOSTNAME != ''
         ):
             if "use_service_desc" in cfg and cfg["use_service_desc"] is True:
                 if self.SERVICEDESC != '' or self.DATATYPE == 'HOSTPERFDATA':
@@ -185,9 +185,9 @@ def chk_bool(value):
     """
     checks if value is a stringified boolean
     """
-    if (value.lower() == "true"):
+    if value.lower() == "true":
         return True
-    elif (value.lower() == "false"):
+    elif value.lower() == "false":
         return False
     return value
 
@@ -204,7 +204,7 @@ def read_config(config_file):
         else:
             # check /etc/graphios/graphios.cfg
             config_file = "/etc/graphios/graphios.cfg"
-    config = SafeConfigParser()
+    config = ConfigParser()
     # The logger won't be initialized yet, so we use print_debug
     if os.path.isfile(config_file):
         config.read(config_file)
@@ -220,10 +220,10 @@ def read_config(config_file):
         return config_dict
     else:
         print_debug("Can't open config file: %s" % config_file)
-        print """\nEither modify the script at the config_file = '' line and
+        print("""\nEither modify the script at the config_file = '' line and
 specify where you want your config file to be, or create a config file
 in the above directory (which should be the same dir the graphios.py is in)
-or you can specify --config=myconfigfilelocation at the command line."""
+or you can specify --config=myconfigfilelocation at the command line.""")
         sys.exit(1)
 
 
@@ -240,14 +240,14 @@ def verify_config(config_dict):
         if ensure not in config_dict:
             missing_values.append(ensure)
     if len(missing_values) > 0:
-        print "\nMust have value in config file for:\n"
+        print("\nMust have value in config file for:\n")
         for value in missing_values:
-            print "%s\n" % value
+            print("%s\n" % value)
         sys.exit(1)
     if not config_dict['log_level'] in loglevels.keys():
-        print "Unknown loglevel: " + config_dict['log_level'] + '\n'
-        print "Available loglevels:"
-        print '\n'.join(sorted(loglevels.keys()))
+        print("Unknown loglevel: " + config_dict['log_level'] + '\n')
+        print("Available loglevels:")
+        print('\n'.join(sorted(loglevels.keys())))
         sys.exit(1)
     if "spool_directory" in config_dict:
         spool_directory = config_dict['spool_directory']
@@ -258,7 +258,7 @@ def print_debug(msg):
     prints a debug message if global debug is True
     """
     if debug:
-        print msg
+        print(msg)
 
 
 def verify_options(opts):
@@ -304,7 +304,7 @@ def handle_backends(opts):
     global cfg
     if opts.backend == "carbon" or opts.backend == "statsd":
         if not opts.server:
-            print "Must also have --server for carbon or statsd."
+            print("Must also have --server for carbon or statsd.")
             sys.exit(1)
         if opts.backend == "carbon":
             cfg["enable_carbon"] = True
@@ -313,7 +313,7 @@ def handle_backends(opts):
             cfg["enable_statsd"] = True
             cfg["statsd_server"] = opts.server
     if opts.backend == "librato":
-        print "Use graphios.cfg for librato."
+        print("Use graphios.cfg for librato.")
         sys.exit(1)
 
 
@@ -325,7 +325,7 @@ def configure():
     try:
         cfg["log_max_size"] = int(cfg["log_max_size"])
     except ValueError:
-        print "log_max_size needs to be a integer"
+        print("log_max_size needs to be a integer")
         sys.exit(1)
 
     # Convert cfg["log_max_size"] to bytes. Assume its already in bytes
@@ -451,9 +451,9 @@ def process_spool_dir(directory):
     try:
         perfdata_files = os.listdir(directory)
     except (IOError, OSError) as e:
-        print "Exception '%s' reading spool directory: %s" % (e, directory)
-        print "Check if dir exists, or file permissions."
-        print "Exiting."
+        print("Exception '%s' reading spool directory: %s" % (e, directory))
+        print("Check if dir exists, or file permissions.")
+        print("Exiting.")
         sys.exit(1)
     for perfdata_file in perfdata_files:
         mobjs = []

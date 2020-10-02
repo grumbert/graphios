@@ -1,16 +1,18 @@
 # vim: set ts=4 sw=4 tw=79 et :
 
 import socket
-import cPickle as pickle
+import pickle
 import struct
 import re
 import logging
 import sys
 import base64
-import urllib2
 import json
 import os
 import ast
+
+from urllib.request import urlopen, Request
+from urllib.error import HTTPError
 # ###########################################################
 # #### Librato Backend
 
@@ -129,13 +131,13 @@ class librato(object):
         """
         body = json.dumps({'gauges': g})
         url = "%s/v1/metrics" % (self.api)
-        req = urllib2.Request(url, body, headers)
+        req = Request(url, body, headers)
 
         try:
-            f = urllib2.urlopen(req, timeout=self.flush_timeout_secs)
+            f = urlopen(req, timeout=self.flush_timeout_secs)
             # f.read()
             f.close()
-        except urllib2.HTTPError as error:
+        except HTTPError as error:
             self.metrics_sent = 0
             body = error.read()
             self.log.warning('Failed to send metrics to Librato: Code: \
@@ -201,7 +203,7 @@ class librato(object):
             system = os.name()
 
         pver = sys.version_info
-        user_agent = '%s/%s (%s) Python-Urllib2/%d.%d' % \
+        user_agent = '%s/%s (%s) Python-Urllib/%d.%d' % \
                      (sink_name, sink_version,
                       system, pver[0], pver[1])
         return user_agent
@@ -297,7 +299,7 @@ class carbon(object):
             else:
                 metric_item = (path, (timestamp, value))
             if self.test_mode:
-                print "%s %s %s" % (path, value, timestamp)
+                print("%s %s %s" % (path, value, timestamp))
             metric_list.append(metric_item)
         for metric_list_chunk in self.chunks(metric_list,
                                              self.carbon_max_metrics):
@@ -313,7 +315,7 @@ class carbon(object):
     def chunks(self, l, n):
         """ Yield successive n-sized chunks from l.
         """
-        for i in xrange(0, len(l), n):
+        for i in range(0, len(l), n):
             yield l[i:i + n]
 
     def build_path(self, m):
@@ -378,7 +380,7 @@ class carbon(object):
             try:
                 sock.connect((socket.gethostbyname(server), port))
                 self.log.debug("connected")
-            except Exception, ex:
+            except Exception as ex:
                 self.log.warning("Can't connect to carbon: %s:%s %s" % (
                                  server, port, ex))
 
@@ -386,7 +388,7 @@ class carbon(object):
             try:
                 for message in messages:
                     sock.sendall(message)
-            except Exception, ex:
+            except Exception as ex:
                 self.log.critical("Can't send message to carbon error:%s" % ex)
                 sock.close()
                 return 0
@@ -458,7 +460,7 @@ class statsd(object):
             for m in mlist:
                 try:
                     sock.sendto(m, (socket.gethostbyname(server), port))
-                except Exception, ex:
+                except Exception as ex:
                     self.log.critical("Can't send metric to statsd error:%s"
                                       % ex)
                 else:
@@ -550,12 +552,12 @@ class influxdb(object):
 
     def chunks(self, l, n):
         """ Yield successive n-sized chunks from l. """
-        for i in xrange(0, len(l), n):
+        for i in range(0, len(l), n):
             yield l[i:i+n]
 
     def url_request(self, url, chunk):
         json_body = json.dumps(chunk)
-        req = urllib2.Request(url, json_body)
+        req = Request(url, json_body)
         req.add_header('Content-Type', 'application/json')
         return req
 
@@ -564,10 +566,10 @@ class influxdb(object):
         req = self.url_request(self.build_url(server), chunk)
 
         try:
-            r = urllib2.urlopen(req, timeout=self.timeout)
+            r = urlopen(req, timeout=self.timeout)
             r.close()
             return True
-        except urllib2.HTTPError as e:
+        except HTTPError as e:
             body = e.read()
             self.log.warning('Failed to send metrics to InfluxDB. \
                                 Status code: %d: %s' % (e.code, body))
@@ -630,7 +632,7 @@ class influxdb09(influxdb):
         if 'influxdb_extra_tags' in cfg:
             self.influxdb_extra_tags = ast.literal_eval(
                 cfg['influxdb_extra_tags'])
-            print self.influxdb_extra_tags
+            print(self.influxdb_extra_tags)
         else:
             self.influxdb_extra_tags = {}
 
@@ -658,7 +660,7 @@ class influxdb09(influxdb):
 
     def url_request(self, url, chunk):
         if self.influxdb_line_protocol:
-            req = urllib2.Request(url, chunk)
+            req = Request(url, chunk)
             req.add_header('Content-Type', 'application/x-www-form-urlencoded')
             return req
         else:
